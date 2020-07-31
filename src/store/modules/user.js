@@ -1,13 +1,15 @@
 import { login, logout, getInfo } from '@/api/user'
 import { getToken, setToken, removeToken } from '@/utils/auth'
 import router, { resetRouter } from '@/router'
+import { Message } from 'element-ui'
 
 const state = {
   token: getToken(),
   name: '',
   avatar: '',
   introduction: '',
-  roles: []
+  roles: [],
+  buttons: []
 }
 
 const mutations = {
@@ -25,15 +27,18 @@ const mutations = {
   },
   SET_ROLES: (state, roles) => {
     state.roles = roles
+  },
+  SET_BUTTONS: (state, buttons) => {
+    state.buttons = buttons
   }
 }
 
 const actions = {
   // user login
   login({ commit }, userInfo) {
-    const { username, password } = userInfo
+    const { username, password, uuid, code } = userInfo
     return new Promise((resolve, reject) => {
-      login({ username: username.trim(), password: password }).then(response => {
+      login({ username: username.trim(), password: password, uuid: uuid, code: code }).then(response => {
         const { data } = response
         commit('SET_TOKEN', data.token)
         setToken(data.token)
@@ -47,25 +52,20 @@ const actions = {
   // get user info
   getInfo({ commit, state }) {
     return new Promise((resolve, reject) => {
-      getInfo(state.token).then(response => {
-        const { data } = response
-
+      getInfo(state.token).then(res => {
+        const data = res.data
         if (!data) {
-          reject('Verification failed, please Login again.')
+          reject('验证失败，请重新登录！')
         }
-
-        const { roles, name, avatar, introduction } = data
-
-        // roles must be a non-empty array
-        if (!roles || roles.length <= 0) {
-          reject('getInfo: roles must be a non-null array!')
+        if (!res.roles || res.roles.length <= 0) {
+          reject('该用户没有分配角色！')
         }
-
-        commit('SET_ROLES', roles)
-        commit('SET_NAME', name)
-        commit('SET_AVATAR', avatar)
-        commit('SET_INTRODUCTION', introduction)
-        resolve(data)
+        commit('SET_ROLES', res.roles)
+        commit('SET_NAME', data.realName)
+        commit('SET_AVATAR', 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif')
+        commit('SET_INTRODUCTION', data.mobile)
+        commit('SET_BUTTONS', data.buttons)
+        resolve(res)
       }).catch(error => {
         reject(error)
       })
@@ -76,6 +76,7 @@ const actions = {
   logout({ commit, state, dispatch }) {
     return new Promise((resolve, reject) => {
       logout(state.token).then(() => {
+        Message.success('退出成功')
         commit('SET_TOKEN', '')
         commit('SET_ROLES', [])
         removeToken()
@@ -102,7 +103,7 @@ const actions = {
     })
   },
 
-  // dynamically modify permissions
+  // 动态修改权限
   async changeRoles({ commit, dispatch }, role) {
     const token = role + '-token'
 

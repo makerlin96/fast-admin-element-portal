@@ -1,12 +1,11 @@
 import request from '@/utils/request'
-const url = '/sys/role'
-export function getDataList() {
+const url = '/sys/menu'
+export function getMenuDataList() {
   return request({
     url: url,
     method: 'get'
   })
 }
-
 export function add(data) {
   return request({
     url: url,
@@ -22,25 +21,17 @@ export function edit(data) {
     data
   })
 }
-
-export function getInfo(id) {
-  return request({
-    url: url + '/info/' + id,
-    method: 'get'
-  })
-}
-
-export function getPermissions() {
-  return request({
-    url: url + '/permission',
-    method: 'get'
-  })
-}
-
-export function del(data) {
+export function del(ids) {
   return request({
     url: url,
     method: 'delete',
-    data
+    data: ids
+  })
+}
+
+export function getMenuById(id) {
+  return request({
+    url: url + '/info/' + id,
+    method: 'get'
   })
 }

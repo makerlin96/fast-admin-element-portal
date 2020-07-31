@@ -1,8 +1,9 @@
 import request from '@/utils/request'
+const url = '/sys/user'
 
 export function login(data) {
   return request({
-    url: '/vue-element-admin/user/login',
+    url: '/login',
     method: 'post',
     data
   })
@@ -10,7 +11,7 @@ export function login(data) {
 
 export function getInfo(token) {
   return request({
-    url: '/vue-element-admin/user/info',
+    url: url + '/permissions',
     method: 'get',
     params: { token }
   })
@@ -18,8 +19,8 @@ export function getInfo(token) {
 
 export function logout() {
   return request({
-    url: '/vue-element-admin/user/logout',
-    method: 'post'
+    url: '/logout',
+    method: 'get'
   })
 }
 
@@ -27,5 +28,13 @@ export function getCaptchaImg(timestamp) {
   return request({
     url: '/captcha/' + timestamp,
     method: 'get'
+  })
+}
+
+export function getDataList(data) {
+  return request({
+    url: url,
+    method: 'get',
+    params: data
   })
 }

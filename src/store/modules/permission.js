@@ -1,61 +1,54 @@
-import { asyncRoutes, constantRoutes } from '@/router'
-
-/**
- * Use meta.role to determine if the current user has permission
- * @param roles
- * @param route
- */
-function hasPermission(roles, route) {
-  if (route.meta && route.meta.roles) {
-    return roles.some(role => route.meta.roles.includes(role))
-  } else {
-    return true
-  }
-}
+import { constantRoutes, errorRoutes } from '@/router'
+import Layout from '@/layout'
 
 /**
  * Filter asynchronous routing tables by recursion
  * @param routes asyncRoutes
  * @param roles
  */
-export function filterAsyncRoutes(routes, roles) {
-  const res = []
-
-  routes.forEach(route => {
-    const tmp = { ...route }
-    if (hasPermission(roles, tmp)) {
-      if (tmp.children) {
-        tmp.children = filterAsyncRoutes(tmp.children, roles)
+export function filterAsyncRoutes(routes) {
+  const accessedRouters = []
+  routes.forEach(router => {
+    if (router.component) {
+      if (router.component === 'Layout') {
+        router.component = Layout
+      } else {
+        const component = router.component
+        router.component = resolve => require(['@/views/' + component], resolve)
       }
-      res.push(tmp)
     }
+    if (router.children && router.children.length) {
+      router.children = filterAsyncRoutes(router.children)
+    }
+    accessedRouters.push(router)
   })
-
-  return res
+  // console.log(accessedRouters)
+  return accessedRouters
 }
 
 const state = {
   routes: [],
-  addRoutes: []
+  addRoutes: [],
+  buttons: []
 }
 
 const mutations = {
   SET_ROUTES: (state, routes) => {
     state.addRoutes = routes
     state.routes = constantRoutes.concat(routes)
+  },
+  SET_BUTTONS: (state, buttons) => {
+    state.buttons = buttons
   }
 }
 
 const actions = {
-  generateRoutes({ commit }, roles) {
-    return new Promise(resolve => {
-      let accessedRoutes
-      if (roles.includes('admin')) {
-        accessedRoutes = asyncRoutes || []
-      } else {
-        accessedRoutes = filterAsyncRoutes(asyncRoutes, roles)
-      }
+  generateRoutes({ commit }, { routes, buttons }) {
+    return new Promise((resolve, reject) => {
+      console.log('开始构建路由')
+      const accessedRoutes = filterAsyncRoutes(routes).concat(errorRoutes)
       commit('SET_ROUTES', accessedRoutes)
+      commit('SET_BUTTONS', buttons)
       resolve(accessedRoutes)
     })
   }
